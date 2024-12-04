@@ -3,7 +3,8 @@ from lifelines import CoxPHFitter
 from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.model_selection import train_test_split
-
+from lifelines.utils import k_fold_cross_validation
+import matplotlib.pyplot as plt
 
 def dataframe_to_latex(df, caption="Table Caption", label="table:label"):
     """
@@ -54,7 +55,81 @@ def dataframe_to_latex(df, caption="Table Caption", label="table:label"):
     # Print the LaTeX table
     print(latex_str)
 
-def run_model(df, name):
+def find_l1_penalty(df):
+    # Find optimal L1 penalty for LASSO CoxPH model
+    l1_penalty_values = np.logspace(-4, -1, 60) 
+    scores = []
+    ci_lower = []
+    ci_upper = []
+    non_zero_params = []
+
+    # Perform 5-fold cross-validation for each L1 penalty value
+    for l1_penalty in l1_penalty_values:
+        cph = CoxPHFitter(penalizer=l1_penalty)
+        partial_loglikelihoods = k_fold_cross_validation(
+            cph, 
+            df, 
+            duration_col="PFS_MONTHS", 
+            event_col="PFS_STATUS", 
+            k=5, 
+            scoring_method="log_likelihood"
+        )
+        # Calculate the partial likelihood deviance
+        partial_loglikelihood_deviance = -2 * np.mean(partial_loglikelihoods)
+        scores.append(partial_loglikelihood_deviance)
+
+        # Calculate CIs using standard error across folds
+        std_error = np.std(partial_loglikelihoods, ddof=1)
+        ci_lower.append(partial_loglikelihood_deviance - 1.96 * std_error)
+        ci_upper.append(partial_loglikelihood_deviance + 1.96 * std_error)
+
+        # Fit the model on the entire dataset to compute the number of non-zero coefficients
+        cph.fit(df, duration_col="PFS_MONTHS", event_col="PFS_STATUS")
+        non_zero_params.append((cph.params_ != 0).sum())
+
+    # Find the L1 penalty value with the minimum partial likelihood deviance
+    optimal_index = np.argmin(scores)
+    optimal_penalty = l1_penalty_values[optimal_index]
+
+    # Print the results
+    print(f"Optimal L1 penalty: {optimal_penalty}")
+    print(f"Partial Log-Likelihood Deviance: {scores[optimal_index]:.3f}")
+    print(f"Ideal Nonzero Parameters: {non_zero_params[optimal_index]}")
+    print(f"All non-zero: {non_zero_params}")
+
+    # Plot the partial likelihood deviance with CIs
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    # Plot deviance
+    ax1.semilogx(l1_penalty_values, scores, label="Deviance", marker='o', color='blue')
+    ax1.fill_between(
+        l1_penalty_values, 
+        ci_lower, 
+        ci_upper, 
+        color='blue', 
+        alpha=0.2, 
+        label="95% CI"
+    )
+    ax1.set_xlabel("L1 Penalty (log scale)")
+    ax1.set_ylabel("Partial Log-Likelihood Deviance")
+    ax1.set_title("Optimal L1 Penalty for LASSO CoxPH Model with Parameter Count")
+    ax1.grid(True, which="both", linestyle="--", linewidth=0.5)
+
+    # Add secondary x-axis for the number of non-zero parameters
+    ax2 = ax1.twiny()
+    ax2.set_xlim(ax1.get_xlim())
+    ax2.set_xticks(l1_penalty_values[::10])  # Use a subset of penalty values for clarity
+    ax2.set_xticklabels(non_zero_params[::10], rotation=45)
+    ax2.set_xlabel("Number of Non-Zero Parameters")
+
+    # Add legend
+    ax1.legend()
+    plt.tight_layout()
+    plt.show()
+
+    return optimal_penalty
+
+def run_model(df, name, alpha):
     # Train-test split
     # Split the data into training and testing sets
     test_size = 0.2
@@ -62,16 +137,8 @@ def run_model(df, name):
     train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
 
     # Fit the Cox proportional hazards model on the training set
-    cph = CoxPHFitter()
-    cph.fit(train_df, duration_col='PFS_MONTHS', event_col='PFS_STATUS', strata = ["IS_FEMALE"])
-    cph.check_assumptions(train_df, p_value_threshold=0.05)
-    
-    r = cph.compute_residuals(train_df, kind='deviance')
-    r.plot.scatter(
-        x='PFS_MONTHS', y='deviance', c=np.where(r['PFS_STATUS'], '#008fd5', '#fc4f30'),
-        alpha=0.75
-    )
-    # '#008fd5' is death, '#fc4f30' is censored
+    cph = CoxPHFitter(penalizer=alpha)
+    cph.fit(train_df, duration_col='PFS_MONTHS', event_col='PFS_STATUS', penalizer=1)
 
     # Print summary of the fitted model
     cph.print_summary(style="ascii")
@@ -112,7 +179,7 @@ def run_model(df, name):
     ll_ratio_test_df = cph.log_likelihood_ratio_test().degrees_freedom
     neg_log2_p_ll_ratio_test = -np.log2(cph.log_likelihood_ratio_test().p_value)
 
-    with open(f'cph-{c_index_test:.3f}-{name}-summary.txt', 'w') as f:
+    with open(f'cph-lasso-{c_index_test:.3f}-{name}-summary.txt', 'w') as f:
         f.write(summary_df.to_string())
         formatted_metrics = '\n'.join([f'{metric:.4f}' for metric in model_metrics])
         f.write(f"\n\nModel metrics: {formatted_metrics}")
@@ -193,14 +260,11 @@ def run_model(df, name):
     # Display the plot
     plt.tight_layout()
     name = name.replace(' ', '-')
-    plt.savefig(f'cph-{c_index_test:.3f}-{name}-forest-plot.png')
+    plt.savefig(f'cph-lasso-{c_index_test:.3f}-{name}-forest-plot.png')
     plt.show()
 
 # Without treatment data
 surv = pd.read_csv('survival.csv')
-
-# DROP DATA WITH -1 MSI SCORE - OUT OF RANGE
-surv = surv[surv['MSI_SCORE'] != -1]
 
 # Exclude treatment because it is collinear with clinically reported PD-L1 score
 # Don't include smoking status because it is collinear with smoking history
@@ -209,17 +273,5 @@ surv.drop(columns = ["PEMBROLIZUMAB", "ATEZOLIZUMAB", "NIVOLUMAB", "CURRENT_SMOK
 # Remove non-meaningful columns
 surv.drop(columns = ["MET_DRIVER", "BRAF_DRIVER", "ARID1A_DRIVER"], inplace = True)
 
-log_vars = [
-    "CLINICALLY_REPORTED_PD-L1_SCORE", "IMPACT_TMB_SCORE", "FRACTION_GENOME_ALTERED", "PACK-YEAR_HISTORY","ALBUMIN", "MSI_SCORE", "ECOG"
-]
-
-# log transform variables
-for var in log_vars:
-    # create a _log column for each variable
-    surv[var + '_log'] = np.log(surv[var] + 1)
-    
-    # drop the original column
-    surv.drop(columns = [var], inplace = True)
-    
-# Drop those with low variance
-run_model(surv, 'MSK MIND LUAD')
+# Find the optimal L1 penalty for the LASSO CoxPH model
+optimal_penalty = find_l1_penalty(surv)
