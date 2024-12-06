@@ -30,7 +30,7 @@ def create_rsf(df, name, trees=1000):
 
     print(X_train.columns)
     # Fit the Random Survival Forest model
-    rsf = RandomSurvivalForest(n_estimators=trees, min_samples_split=12, min_samples_leaf=5, random_state=42)
+    rsf = RandomSurvivalForest(n_estimators=trees, min_samples_split=15, min_samples_leaf=7, random_state=42)
     rsf.fit(X_train, y_train)
 
     # Evaluate model performance
@@ -74,4 +74,4 @@ surv = pd.read_csv('survival.csv')
 surv.drop(columns = ["PEMBROLIZUMAB", "ATEZOLIZUMAB", "NIVOLUMAB", "CURRENT_SMOKER", "FORMER_SMOKER", "NEVER_SMOKER"], inplace = True)
 surv.drop(columns = ["MET_DRIVER", "BRAF_DRIVER", "ARID1A_DRIVER"], inplace = True)
 
-create_rsf(surv, 'MSK MIND LUAD', 550)
+create_rsf(surv, 'MSK MIND LUAD', 50)

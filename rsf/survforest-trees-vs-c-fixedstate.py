@@ -9,7 +9,7 @@ import time
 
 def run_trees(df, surv_data, covariates, name):
     # Array to store results
-    n_estimators_list = np.linspace(100, 1000, 25, dtype=int)
+    n_estimators_list = np.linspace(10, 1000, 25, dtype=int)
     test_size = 0.2  # Use a fixed test size
 
     train_c_indices = []

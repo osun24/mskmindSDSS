@@ -13,7 +13,7 @@ from mpl_toolkits.mplot3d import Axes3D
 # Optimal Test C-index: 0.719 with min_samples_split: 2, min_samples_leaf: 4
 
 def run_trees(df, surv_data, covariates, name):
-    n_estimators = 550
+    n_estimators = 50
     min_samples_split_list = np.arange(2, 20, dtype=int)
     min_samples_leaf_list = np.arange(5, 12, dtype=int)
     test_size = 0.2  # Use a fixed test size

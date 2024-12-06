@@ -184,13 +184,13 @@ def run_model(df, name):
     # Display the plot
     plt.tight_layout()
     name = name.replace(' ', '-')
-    plt.savefig(f'cph-{c_index_test:.2f}-{name}-forest-plot.png')
+    plt.savefig(f'gbm/cph-{c_index_test:.2f}-{name}-forest-plot.png')
     plt.show()
 
 # Without treatment data
 surv = pd.read_csv('survival.csv')
 
-parameters = ["ALBUMIN","CLINICALLY_REPORTED_PD-L1_SCORE", "PACK-YEAR_HISTORY", "DNLR", "IMPACT_TMB_SCORE", "AGE", "FRACTION_GENOME_ALTERED", "ECOG", "EGFR_DRIVER", "ERBB2_DRIVER"]
+parameters = ["ALBUMIN","CLINICALLY_REPORTED_PD-L1_SCORE", "PACK-YEAR_HISTORY", "DNLR", "IMPACT_TMB_SCORE", "FRACTION_GENOME_ALTERED"]
 
 surv = surv[parameters + ['PFS_MONTHS', 'PFS_STATUS']]
 

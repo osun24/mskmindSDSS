@@ -27,8 +27,8 @@ def run_gbm_trees(df, surv_data, covariates, name):
         for j, min_samples_leaf in enumerate(min_samples_leaf_list):
             gbm = GradientBoostingSurvivalAnalysis(
                 loss="coxph",
-                n_estimators= 50,
-                learning_rate = 0.2,
+                n_estimators= 40,
+                learning_rate = 0.201010,
                 min_samples_leaf=min_samples_leaf,
                 min_samples_split=min_samples_split,
                 subsample=1.0,
@@ -95,6 +95,19 @@ df = pd.read_csv('survival.csv')
 
 df.drop(columns = ["PEMBROLIZUMAB", "ATEZOLIZUMAB", "NIVOLUMAB", "CURRENT_SMOKER", "FORMER_SMOKER", "NEVER_SMOKER"], inplace = True)
 df.drop(columns = ["MET_DRIVER", "BRAF_DRIVER", "ARID1A_DRIVER"], inplace = True)
+
+log_vars = [
+    "CLINICALLY_REPORTED_PD-L1_SCORE", "IMPACT_TMB_SCORE", "FRACTION_GENOME_ALTERED", "PACK-YEAR_HISTORY","ALBUMIN", "MSI_SCORE", "ECOG"
+]
+
+# log transform variables
+for var in log_vars:
+    # create a _log column for each variable
+    df[var + '_log'] = np.log(df[var] + 1)
+    
+    # drop the original column
+    df.drop(columns = [var], inplace = True)
+
 covariates = df.columns.difference(['PFS_STATUS', 'PFS_MONTHS'])
 
 # Create structured array for survival analysis

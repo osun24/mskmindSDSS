@@ -199,9 +199,6 @@ def run_model(df, name):
 # Without treatment data
 surv = pd.read_csv('survival.csv')
 
-# DROP DATA WITH -1 MSI SCORE - OUT OF RANGE
-surv = surv[surv['MSI_SCORE'] != -1]
-
 # Exclude treatment because it is collinear with clinically reported PD-L1 score
 # Don't include smoking status because it is collinear with smoking history
 surv.drop(columns = ["PEMBROLIZUMAB", "ATEZOLIZUMAB", "NIVOLUMAB", "CURRENT_SMOKER", "FORMER_SMOKER", "NEVER_SMOKER"], inplace = True)

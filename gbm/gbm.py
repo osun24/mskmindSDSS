@@ -27,15 +27,15 @@ X_train, X_test, y_train, y_test = train_test_split(df[covariates], surv_data, t
 # Instantiate the model with desired hyperparameters
 gbm = GradientBoostingSurvivalAnalysis(
     loss="coxph",
-    learning_rate=0.2,
-    n_estimators=50,
+    n_estimators= 31,
+    learning_rate = 0.264,
     subsample=1.0,
     random_state=42, 
     validation_fraction=0.1,
     n_iter_no_change=10,
     max_depth = 3,
     min_samples_split = 2,
-    min_samples_leaf = 1
+    min_samples_leaf = 10
 )
 
 # Fit the model
