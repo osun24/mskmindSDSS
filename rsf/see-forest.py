@@ -7,7 +7,7 @@ from matplotlib import cm
 import pandas as pd
 
 # Import RSF model
-rsf = joblib.load('rsf_model-550-c0.691.pkl')
+rsf = joblib.load('rsf/rsf_model-550-c0.691.pkl')
 
 def calculate_survival_stats(survival_function):
     # Extract times and corresponding survival probabilities

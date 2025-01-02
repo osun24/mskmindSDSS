@@ -1,0 +1,17 @@
+                                     coef  exp(coef)  se(coef)  coef lower 95%  coef upper 95%  exp(coef) lower 95%  exp(coef) upper 95%  cmp to         z         p   -log2(p) significance
+covariate                                                                                                                                                                                   
+FRACTION_GENOME_ALTERED          0.089780   1.093934  0.441396       -0.775341        0.954901             0.460547             2.598413     0.0  0.203400  0.838822   0.253563             
+DNLR                             0.086919   1.090808  0.022514        0.042792        0.131046             1.043720             1.140020     0.0  3.860616  0.000113  13.110095          ***
+PACK-YEAR_HISTORY               -0.006503   0.993518  0.004031       -0.014403        0.001396             0.985700             1.001397     0.0 -1.613509  0.106634   3.229261             
+CLINICALLY_REPORTED_PD-L1_SCORE -0.010778   0.989280  0.002727       -0.016123       -0.005433             0.984007             0.994582     0.0 -3.952295  0.000077  13.657207          ***
+IMPACT_TMB_SCORE                -0.031277   0.969207  0.010709       -0.052265       -0.010288             0.949077             0.989765     0.0 -2.920676  0.003493   8.161429           **
+ALBUMIN                         -0.750456   0.472151  0.196377       -1.135348       -0.365564             0.321310             0.693806     0.0 -3.821502  0.000133  12.880181          ***
+
+Model metrics: -615.5602
+0.6936
+
+Train Concordance = 0.69
+Concordance on test set = 0.69
+Partial AIC = 1243.12
+log-likelihood ratio test = 53.18 on 6 df
+-log2(p) of ll-ratio test = 29.79
